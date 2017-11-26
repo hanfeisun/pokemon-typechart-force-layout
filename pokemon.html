@@ -1,0 +1,313 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Force based label placement</title>
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?2.6.0"></script>
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.layout.js?2.6.0"></script>
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.geom.js?2.6.0"></script>
+    <style>
+
+        /* Make the chart container fill the page using CSS. */
+        #chart {
+            position: fixed;
+            left: 0px;
+            right: 0px;
+            top: 0px;
+            bottom: 0px;
+        }
+
+        path.link {
+            fill: none;
+            stroke: #bbb;
+            stroke-width: 1.5px;
+
+        }
+
+        circle {
+            fill: #ccc;
+            stroke: #fff;
+            stroke-width: 1.5px;
+        }
+
+        text {
+            fill: #000;
+            font: 10px sans-serif;
+            pointer-events: none;
+        }
+
+    </style>
+
+</head>
+<body>
+<div id="chart">
+    <svg>
+        <defs>
+            <linearGradient id='grad'>
+                <stop stop-color='white'/>
+                <stop offset='100%' stop-color='black'/>
+            </linearGradient>
+        </defs>
+    </svg>
+</div>
+
+<script type="text/javascript" charset="utf-8">
+    var chartDiv = document.getElementById("chart");
+    var vis = d3.select(chartDiv).select("svg");
+
+    var w = 1280, h = 720;
+
+
+    vis.attr("width", w).attr("height", h);
+
+
+    var labelDistance = 0;
+
+
+    var nodes = [];
+    var labelAnchors = [];
+    var labelAnchorLinks = [];
+    var links = [];
+
+
+    var typechart = [{"name": "Normal", "immunes": ["Ghost"], "weaknesses": ["Rock", "Steel"], "strengths": []},
+        {
+            "name": "Fire",
+            "immunes": [],
+            "weaknesses": ["Fire", "Water", "Rock", "Dragon"],
+            "strengths": ["Grass", "Ice", "Bug", "Steel"]
+        },
+        {
+            "name": "Water",
+            "immunes": [],
+            "weaknesses": ["Water", "Grass", "Dragon"],
+            "strengths": ["Fire", "Ground", "Rock"]
+        },
+        {
+            "name": "Electric",
+            "immunes": ["Ground"],
+            "weaknesses": ["Electric", "Grass", "Dragon"],
+            "strengths": ["Water", "Flying"]
+        },
+        {
+            "name": "Grass",
+            "immunes": [],
+            "weaknesses": ["Fire", "Grass", "Poison", "Flying", "Bug", "Dragon", "Steel"],
+            "strengths": ["Water", "Ground", "Rock"]
+        },
+        {
+            "name": "Ice",
+            "immunes": [],
+            "weaknesses": ["Fire", "Water", "Ice", "Steel"],
+            "strengths": ["Grass", "Ground", "Flying", "Dragon"]
+        },
+        {
+            "name": "Fighting",
+            "immunes": ["Ghost"],
+            "weaknesses": ["Poison", "Flying", "Psychic", "Bug", "Fairy"],
+            "strengths": ["Normal", "Ice", "Rock", "Dark", "Steel"]
+        },
+        {
+            "name": "Poison",
+            "immunes": ["Steel"],
+            "weaknesses": ["Poison", "Ground", "Rock", "Ghost"],
+            "strengths": ["Grass", "Fairy"]
+        },
+        {
+            "name": "Ground",
+            "immunes": ["Flying"],
+            "weaknesses": ["Grass", "Bug"],
+            "strengths": ["Fire", "Electric", "Poison", "Rock", "Steel"]
+        },
+        {
+            "name": "Flying",
+            "immunes": [],
+            "weaknesses": ["Electric", "Rock", "Steel"],
+            "strengths": ["Grass", "Fighting", "Bug"]
+        },
+        {
+            "name": "Psychic",
+            "immunes": ["Dark"],
+            "weaknesses": ["Psychic", "Steel"],
+            "strengths": ["Fighting", "Poison"]
+        },
+        {
+            "name": "Bug",
+            "immunes": [],
+            "weaknesses": ["Fire", "Fighting", "Poison", "Flying", "Ghost", "Steel", "Fairy"],
+            "strengths": ["Grass", "Psychic", "Dark"]
+        },
+        {
+            "name": "Rock",
+            "immunes": [],
+            "weaknesses": ["Fighting", "Ground", "Steel"],
+            "strengths": ["Fire", "Ice", "Flying", "Bug"]
+        },
+        {"name": "Ghost", "immunes": ["Normal"], "weaknesses": ["Dark"], "strengths": ["Psychic", "Ghost"]},
+        {"name": "Dragon", "immunes": ["Fairy"], "weaknesses": ["Steel"], "strengths": ["Dragon"]},
+        {"name": "Dark", "immunes": [], "weaknesses": ["Fighting", "Dark", "Fairy"], "strengths": ["Psychic", "Ghost"]},
+        {
+            "name": "Steel",
+            "immunes": [],
+            "weaknesses": ["Fire", "Water", "Electric", "Steel"],
+            "strengths": ["Ice", "Rock", "Fairy"]
+        },
+        {
+            "name": "Fairy",
+            "immunes": [],
+            "weaknesses": ["Fire", "Poison", "Steel"],
+            "strengths": ["Fighting", "Dragon", "Dark"]
+        }]
+
+
+    var nodesMap = {};
+    for (var i = 0; i < typechart.length; i++) {
+        var node = {
+            label: typechart[i]["name"]
+        };
+        nodes.push(node);
+        nodesMap[node.label] = i;
+        labelAnchors.push({
+            node: node
+        });
+        labelAnchors.push({
+            node: node
+        });
+    }
+    ;
+
+    for (var i = 0; i < typechart.length; i++) {
+        var strengths = typechart[i]["strengths"];
+
+        for (var j = 0; j < strengths.length; j++) {
+            name = strengths[j];
+            links.push({
+                source: nodesMap[typechart[i]["name"]],
+                target: nodesMap[name],
+                weight: 0.1
+            });
+        }
+        labelAnchorLinks.push({
+            source: i * 2,
+            target: i * 2 + 1,
+            weight: 1
+        });
+    }
+    ;
+
+    var force = d3.layout.force().size([w, h]).nodes(nodes).links(links).gravity(1).linkDistance(50).charge(-3000).linkStrength(function (x) {
+        return x.weight * 2
+    });
+
+
+    force.start();
+    // build the arrow.
+    vis.append("svg:defs").selectAll("marker")
+            .data(["end"])      // Different link/path types can be defined here
+            .enter().append("svg:marker")    // This section adds in the arrows
+            .attr("id", String)
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 15)
+            .attr("refY", -1.5)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("svg:path")
+            .attr("d", "M0,-5L10,0L0,5");
+
+
+    // add the links and the arrows
+    var path = vis.append("svg:g").selectAll("path")
+            .data(force.links())
+            .enter().append("svg:path")
+            //    .attr("class", function(d) { return "link " + d.type; })
+            .attr("class", "link")
+            .attr("marker-end", "url(#end)");
+
+    var force2 = d3.layout.force().nodes(labelAnchors).links(labelAnchorLinks).gravity(0).linkDistance(0).linkStrength(8).charge(-100).size([w, h]);
+    force2.start();
+
+    var link = vis.selectAll("line.link").data(links).enter().append("svg:line").attr("class", "link").style("stroke", "#CCC");
+
+    var node = vis.selectAll("g.node").data(force.nodes()).enter().append("svg:g").attr("class", "node");
+    node.append("svg:circle").attr("r", 5).style("fill", "#555").style("stroke", "#FFF").style("stroke-width", 3);
+    node.call(force.drag);
+
+
+    var anchorLink = vis.selectAll("line.anchorLink").data(labelAnchorLinks)//.enter().append("svg:line").attr("class", "anchorLink").style("stroke", "#999");
+
+    var anchorNode = vis.selectAll("g.anchorNode").data(force2.nodes()).enter().append("svg:g").attr("class", "anchorNode");
+    anchorNode.append("svg:circle").attr("r", 0).style("fill", "#FFF");
+    anchorNode.append("svg:text").text(function (d, i) {
+        return i % 2 == 0 ? "" : d.node.label
+    }).style("fill", "#555").style("font-family", "Arial").style("font-size", 15);
+
+    var updateLink = function () {
+        this.attr("x1", function (d) {
+            return d.source.x;
+        }).attr("y1", function (d) {
+            return d.source.y;
+        }).attr("x2", function (d) {
+            return d.target.x;
+        }).attr("y2", function (d) {
+            return d.target.y;
+        });
+
+    }
+
+    var updateNode = function () {
+        this.attr("transform", function (d) {
+            return "translate(" + d.x + "," + d.y + ")";
+        });
+
+    }
+
+
+    force.on("tick", function () {
+
+        force2.start();
+
+        node.call(updateNode);
+
+        path.attr("d", function (d) {
+            var dx = d.target.x - d.source.x,
+                    dy = d.target.y - d.source.y,
+                    dr = Math.sqrt(dx * dx + dy * dy);
+            return "M" +
+                    d.source.x + "," +
+                    d.source.y + "A" +
+                    dr*1.5 + "," + dr*1.5 + " 0 0,1 " +
+                    d.target.x + "," +
+                    d.target.y;
+        });
+
+        anchorNode.each(function (d, i) {
+            if (i % 2 == 0) {
+                d.x = d.node.x;
+                d.y = d.node.y;
+            } else {
+                var b = this.childNodes[1].getBBox();
+
+                var diffX = d.x - d.node.x;
+                var diffY = d.y - d.node.y;
+
+                var dist = Math.sqrt(diffX * diffX + diffY * diffY);
+
+                var shiftX = b.width * (diffX - dist) / (dist * 2);
+                shiftX = Math.max(-b.width, Math.min(0, shiftX));
+                var shiftY = 5;
+                this.childNodes[1].setAttribute("transform", "translate(" + shiftX + "," + shiftY + ")");
+            }
+        });
+
+
+        anchorNode.call(updateNode);
+
+
+        anchorLink.call(updateLink);
+
+    });
+
+</script>
+</body>
+</html>
