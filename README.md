@@ -1,4 +1,4 @@
-# Visualize Pokemon Type Chart using the force layout of d3
+# Visualize Pokemon Type Chart using force layout
 
 Demo: https://hanfeisun.github.io/pokemon-typechart-force-layout/
 
