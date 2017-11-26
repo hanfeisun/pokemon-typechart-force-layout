@@ -5,7 +5,7 @@ Demo: https://hanfeisun.github.io/pokemon-typechart-force-layout/
 A quick-and-dirty 10-minute hack to visualize the intricate [Pokemon Type Chart](https://bulbapedia.bulbagarden.net/wiki/Type#Type_chart). 
 
 
-For cleaness, only **A-super-effective-against-B** relationship is displayed in the graph. **A-not-so-effective-again-B** and **A-immune-to-B** relationship is not shown.
+For cleaness, only **A-super-effective-against-B** relationship is displayed in the graph. **A-not-so-effective-against-B** and **A-immune-to-B** relationship is not shown.
 
 # Reference
 
