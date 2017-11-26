@@ -2,6 +2,7 @@
 
 # Reference
 
-Strength and weakness table copied from: https://github.com/filipekiss/pokemon-type-chart
-Forced layout code copied from: http://bl.ocks.org/MoritzStefaner/1377729 and http://bl.ocks.org/d3noob/5141278
+1. Strength and weakness table copied from: [pokemon-type-chart](https://github.com/filipekiss/pokemon-type-chart)
+
+2. Forced layout code copied from: [here](http://bl.ocks.org/MoritzStefaner/1377729) and [here](http://bl.ocks.org/d3noob/5141278)
 
